@@ -1,0 +1,12 @@
+streamlit
+langchain
+langchain-community
+sentence-transformers
+pypdf
+openai
+chromadb
+git+https://github.com/openai/whisper.git
+python-dotenv
+SpeechRecognition
+gtts
+streamlit-audiorecorder

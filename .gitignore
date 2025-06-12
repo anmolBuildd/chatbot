@@ -1,0 +1,28 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+.env/
+venv/
+chatbot-env/
+
+# Streamlit secrets
+.secrets.toml
+.env
+.env.*
+
+# Audio/temp files
+*.mp3
+*.wav
+*.ogg
+*.m4a
+*.webm
+*.tmp
+*.log
+
+# Vector database files
+db/
+*.chroma/
+*.sqlite3
