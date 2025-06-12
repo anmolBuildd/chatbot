@@ -10,3 +10,4 @@ python-dotenv
 SpeechRecognition
 gtts
 streamlit-audiorecorder
+faiss-cpu

@@ -22,3 +22,5 @@ chatbot-env/
 *.tmp
 *.log
 
+faiss_index.pkl
+
