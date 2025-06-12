@@ -22,7 +22,3 @@ chatbot-env/
 *.tmp
 *.log
 
-# Vector database files
-db/
-*.chroma/
-*.sqlite3

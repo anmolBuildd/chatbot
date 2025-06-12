@@ -1,4 +1,9 @@
 # hinglish_finance_rag/app.py
+import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+os.environ["LANGCHAIN_TRACING_V2"] = "false"
+os.environ["LANGCHAIN_ENDPOINT"] = ""
+os.environ["CHROMA_TELEMETRY"] = "False"
 
 import streamlit as st
 from langchain.vectorstores import Chroma
@@ -7,7 +12,6 @@ from langchain.chat_models import ChatOpenAI
 from langchain.schema import AIMessage, HumanMessage
 from dotenv import load_dotenv
 from audiorecorder import audiorecorder
-import os
 import base64
 import tempfile
 from gtts import gTTS
