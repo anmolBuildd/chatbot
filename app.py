@@ -13,13 +13,20 @@ from langchain.schema import AIMessage, HumanMessage
 from dotenv import load_dotenv
 import base64
 import tempfile
-from gtts import gTTS
+import pickle
+from elevenlabs import ElevenLabs, stream
 
 # Load .env
 load_dotenv()
 api_key = os.getenv("GROQ_API_KEY")
+eleven_key = os.getenv("ELEVEN_API_KEY")
 base_url = "https://api.groq.com/openai/v1"
 avatar_path = "static/avatar.jpeg"
+
+# ElevenLabs setup
+voice_id = os.getenv("VOICE_ID")
+model_id = "eleven_multilingual_v2"
+elevenlabs = ElevenLabs(api_key=eleven_key)
 
 # Load style prompt
 with open("style_prompt.txt", "r", encoding="utf-8") as f:
@@ -34,15 +41,18 @@ llm = ChatOpenAI(
     max_tokens=512
 )
 
-# Load Vector DB (switching from Chroma to FAISS for Streamlit compatibility)
+# Load Vector DB
 embedding = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
-import pickle
 if os.path.exists("faiss_index.pkl"):
     with open("faiss_index.pkl", "rb") as f:
         vectordb = pickle.load(f)
 else:
-    from langchain.vectorstores import FAISS
-    vectordb = FAISS.from_texts(["Welcome to the Hinglish Finance Chatbot!"], embedding)
+    with open("data/output.txt", "r", encoding="utf-8") as f:
+        text = f.read()
+    from langchain.text_splitter import CharacterTextSplitter
+    splitter = CharacterTextSplitter(separator="\n", chunk_size=500, chunk_overlap=50)
+    chunks = splitter.split_text(text)
+    vectordb = FAISS.from_texts(chunks, embedding)
     with open("faiss_index.pkl", "wb") as f:
         pickle.dump(vectordb, f)
 retriever = vectordb.as_retriever()
@@ -69,12 +79,21 @@ def generate_answer(user_query):
     response = llm.invoke(prompt)
     return response.content if hasattr(response, 'content') else response
 
-# Text to speech (optional)
-def speak_text(text):
-    tts = gTTS(text)
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
-        tts.save(fp.name)
-        audio_bytes = open(fp.name, 'rb').read()
+# Text to speech using ElevenLabs
+def speak_text_elevenlabs(text):
+    with st.spinner("🎙️ Generating audio response..."):
+        audio_stream = elevenlabs.text_to_speech.stream(
+            text=text,
+            voice_id=voice_id,
+            model_id=model_id,
+            voice_settings={
+        "stability": 0.5,
+        "similarity_boost": 0.6,
+        "style": 0.9,
+        "speed": 1.05
+    }
+        )
+        audio_bytes = b"".join([chunk for chunk in audio_stream if isinstance(chunk, bytes)])
         b64 = base64.b64encode(audio_bytes).decode()
         audio_html = f'<audio autoplay controls><source src="data:audio/mp3;base64,{b64}" type="audio/mp3"></audio>'
         st.markdown(audio_html, unsafe_allow_html=True)
@@ -84,12 +103,12 @@ st.set_page_config(page_title="🧠💬 Neeraj Arora", layout="centered")
 st.title("🧠💬 Financial Advisor")
 st.markdown("Hello dosto, I'm Neeraj Arora and you can ask me any question related to finance")
 
-# 1️⃣ Show chat history first
+# Show chat history
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"], avatar=avatar_path if msg["role"] == "assistant" else None):
         st.markdown(msg["content"])
 
-# 2️⃣ Chat text input — always pinned to bottom
+# Chat input
 text_input = st.chat_input("Apka financial sawaal kya hai?")
 if text_input:
     st.session_state.messages.append({"role": "user", "content": text_input})
@@ -100,4 +119,4 @@ if text_input:
         st.markdown(text_input)
     with st.chat_message("assistant", avatar=avatar_path):
         st.markdown(output)
-        # speak_text(output)
+        speak_text_elevenlabs(output)

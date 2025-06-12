@@ -11,3 +11,4 @@ SpeechRecognition
 gtts
 streamlit-audiorecorder
 faiss-cpu
+elevenlabs
